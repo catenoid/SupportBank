@@ -29,19 +29,18 @@ var readlineSync = require('readline-sync');
 // Initialise an arrray of string commands to functions
 var commands_dictionary = {};
 
-function do_exit() {
-    console.log("Exiting");
-    process.exit(1);
+function do_list(name) {
+    if (name === "All"){
+        console.log("all the names");
+    } else {
+        console.log(name);
+    }
 }
 
-function do_list() {
-    console.log("text");
-}
-
-commands_dictionary["Exit"] = do_exit;
-commands_dictionary["List All"] = do_list;
-
+commands_dictionary["List"] = do_list;
 while (true) {
     var command = readlineSync.question('Enter a command: ');
-    commands_dictionary[command]();
+    command = command.split(" ");
+
+    commands_dictionary[command[0]](command[1]);
 }
