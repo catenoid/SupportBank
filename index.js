@@ -76,7 +76,7 @@ transactions.forEach(function(element) {
         }
 
         // add references to those transactions
-        accounts.get(name).transactionRefs += element;
+        accounts.get(name).transactionRefs.push(element);
     });
 
     // credit or debit those balances
@@ -96,7 +96,21 @@ function do_list(name) {
         }
 
     } else {
-        console.log(name);
+        const record = accounts.get(name);
+        if (record) {
+            console.log(name, "has balance", record.balance);
+            console.log("Every associate transaction with", name);
+            record.transactionRefs.forEach(function(t) {
+                // Some formatting for this transaction:
+                let connective = 'to ' + t.to;
+                if (t.to === name) {
+                    connective = 'from ' + t.from;
+                }
+                console.log(t.date, t.narrative, connective);
+            });
+        } else {
+            console.log("No account found with name", name);
+        }
     }
 }
 
@@ -108,7 +122,8 @@ while (true) {
     const cmd_str = command[0];
     const cmd_fn = commands_dictionary[cmd_str];
     if (cmd_fn) {
-        cmd_fn(command[1]);
+        // Give the list command the remainder of the command string
+        cmd_fn(command.slice(1).join(' '));
     } else {
         console.log("command "+ cmd_str +" not found");
     }
