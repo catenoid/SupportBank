@@ -1,7 +1,15 @@
-console.log("Press Ctrl-C to quit");
+const log4js = require("log4js");
 
-// CSV
-//Date To From Narrative Amount
+log4js.configure({
+    appenders: {
+        file: { type: 'fileSync', filename: 'logs/debug.log' }
+    },
+    categories: {
+        default: { appenders: ['file'], level: 'debug'}
+    }
+});
+
+console.log("Press Ctrl-C to quit");
 
 //Write a program which creates an account for each person, and then creates transactions between the accounts. 
 // The person in the 'From' column is paying money, so the amount needs to be deducted from their account. 
@@ -9,20 +17,12 @@ console.log("Press Ctrl-C to quit");
 // Use a class for each type of object you want to create.
 //Your program should support two commands, which can be typed in on the console:
 //List All should output the names of each person, and the total amount they owe, or are owed.
-// Loop over array of accounts, print balance
-
 //List [Account] should also print a list of every transaction, with the date and narrative, for that account with that name.
-// 
 
-//The JavaScript Date class is extremely bothersome to use. We recommend you parse your date strings using the moment package instead: install it with npm install moment and see this link for documentation on how to parse dates.
-//Either parse the file yourself, or search NPM for a relevant CSV parsing library!
 
-// Account class, with fields:
-// Name
-// Balance
+// Extract Data
 const readlineSync = require('readline-sync');
 const fs = require('fs');
-const csv = require('csv');
 
 // Read CSV, extract data
 var transactions = [];
@@ -32,32 +32,10 @@ class Transaction {
         this.from = from;
         this.to = to;
         this.narrative = narrative;
-        this.amount = parseInt(amount);    
+        this.amount = parseFloat(amount);    
     }
 }
 
-const inputPath = '.\\Transactions2014.csv';
-const csv_out = fs.readFileSync(inputPath, 'utf8');
-const lineSplit = csv_out.split('\n');
-
-for (var i=1; i<lineSplit.length; i++) {
-    // Start at row 1, as row 0 contains the column headings
-    const transaction = lineSplit[i].split(',');
-
-    // Extract the fields
-    const date = transaction[0];
-    const from = transaction[1];
-    const to = transaction[2];
-    const narrative = transaction[3];
-    const amount = transaction[4];
-    
-    // Create transaction objects
-    transactions.push(new Transaction(date, from, to, narrative, amount));
-}
-
-
-// Now all the transactions are in one array
-// Can we have two accounts with different names?
 class Account {
     constructor(name) {
         this.name = name;
@@ -66,23 +44,73 @@ class Account {
     }
 }
 var accounts = new Map();
-transactions.forEach(function(element) {
-    // For each transaction:
 
-    [element.from, element.to].forEach(function(name) {
-        // Create accounts if they don't exist already
-        if (!accounts.get(name)) {
-            accounts.set(name, new Account(name));
-        }
+const inputPath = '.\\Transactions2014.csv';
 
-        // add references to those transactions
-        accounts.get(name).transactionRefs.push(element);
+function import_csv_data(inputPath) {
+    // Clear any pre-existing transactions
+    transactions = [];
+
+    const csv_out = fs.readFileSync(inputPath, 'utf8');
+    const lineSplit = csv_out.split('\n');
+
+    for (var i=1; i<lineSplit.length; i++) {
+        // Start at row 1, as row 0 contains the column headings
+        const transaction = lineSplit[i].split(',');
+
+        // Extract the fields
+        const date = transaction[0];
+        const from = transaction[1];
+        const to = transaction[2];
+        const narrative = transaction[3];
+        const amount = transaction[4];
+        
+        // Create transaction objects
+        transactions.push(new Transaction(date, from, to, narrative, amount));
+    }
+
+    // Use the transactions just loaded to update the accounts
+    updateAccounts();
+}
+
+function import_json_data(inputPath) {
+    // Clear any pre-existing transactions
+    transactions = [];
+
+    const json_str_out = fs.readFileSync(inputPath, 'utf8');
+    const json = JSON.parse(json_str_out);
+
+    json.forEach(function (t) {
+        transactions.push(new Transaction(t["Date"],
+                                          t["FromAccount"],
+                                          t["ToAccount"],
+                                          t["Narrative"],
+                                          t["Amount"]));
     });
 
-    // credit or debit those balances
-    accounts.get(element.from).balance -= element.amount;
-    accounts.get(element.to).balance += element.amount;
-});
+    updateAccounts();
+}
+
+function updateAccounts() {
+    transactions.forEach(function(element) {
+        // For each transaction:
+    
+        [element.from, element.to].forEach(function(name) {
+            // Create accounts if they don't exist already
+            if (!accounts.get(name)) {
+                accounts.set(name, new Account(name));
+            }
+    
+            // add references to those transactions
+            accounts.get(name).transactionRefs.push(element);
+        });
+    
+        // credit or debit those balances
+        accounts.get(element.from).balance -= element.amount;
+        accounts.get(element.to).balance += element.amount;
+    });
+}
+
 
 
 // Initialise an arrray of string commands to functions
@@ -92,13 +120,16 @@ function do_list(name) {
     if (name === "All") {
         console.log("Print all account names and balances");
         for (var [key, value] of accounts) {
-            console.log(value.name, value.balance);
+            const rounded_balance = Math.round(value.balance * 100) / 100;
+            console.log(value.name, rounded_balance);
         }
 
     } else {
         const record = accounts.get(name);
         if (record) {
-            console.log(name, "has balance", record.balance);
+            const rounded_balance = Math.round(record.balance * 100) / 100;
+            console.log(name, "has balance", rounded_balance);
+
             console.log("Every associate transaction with", name);
             record.transactionRefs.forEach(function(t) {
                 // Some formatting for this transaction:
@@ -114,7 +145,21 @@ function do_list(name) {
     }
 }
 
+function do_import(filename) {
+    const extension = filename.split('.').pop();
+    if (extension === 'json') {
+        import_json_data(filename);
+    } else if (extension === 'csv') {
+        import_csv_data(filename);
+    } else {
+        console.log('Unrecognised file type');
+    }
+}
+
+// Command loop
 commands_dictionary["List"] = do_list;
+commands_dictionary["Import"] = do_import;
+
 while (true) {
     var command = readlineSync.question('Enter a command: ');
     command = command.split(" ");
