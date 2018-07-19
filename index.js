@@ -25,8 +25,9 @@ console.log("Press Ctrl-C to quit");
 // Extract Data
 const readlineSync = require('readline-sync');
 const fs = require('fs');
+const xml2js = require('xml2js');
 
-// Read CSV, extract data
+// Store transactions and accounts as objects
 var transactions = [];
 class Transaction {
     constructor(date, from, to, narrative, amount) {
@@ -47,6 +48,8 @@ class Account {
 }
 var accounts = new Map();
 
+// There is a different function handler for each data format
+
 function import_csv_data(inputPath) {
     // Clear any pre-existing transactions
     transactions = [];
@@ -56,6 +59,7 @@ function import_csv_data(inputPath) {
 
     for (var i=1; i<lineSplit.length-1; i++) {
         // Start at row 1, as row 0 contains the column headings
+        // End one before the final element, since the last array item is a blank line
         const transaction = lineSplit[i].split(',');
 
         // Extract the fields
@@ -65,7 +69,7 @@ function import_csv_data(inputPath) {
         const narrative = transaction[3];
         const amount = transaction[4];
         
-        // Check valid amounts (with isNaN) and dates with moment
+        // Check valid amounts (with isNaN)
         if (isNaN(parseFloat(amount))) {
             console.log('Not a valid amount');
             continue;
@@ -105,8 +109,6 @@ function import_json_data(inputPath) {
     updateAccounts();
 }
 
-const xml2js = require('xml2js');
-
 function import_xml_data(inputPath) {
     // Clear any pre-existing transactions
     transactions = [];
@@ -114,10 +116,30 @@ function import_xml_data(inputPath) {
     const xml_str_out = fs.readFileSync(inputPath, 'utf8');
     var parseString = xml2js.parseString;
     parseString(xml_str_out, function (err, result) {
-        console.log(result);
+        // Convert XML to JSON
+        const as_json = JSON.parse(JSON.stringify(result));
+        const ts = as_json["TransactionList"]["SupportTransaction"];
+        ts.forEach(function(t) {
+            const amount = t['Value'][0];
+            
+            // Check valid amounts (with isNaN)
+            if (isNaN(parseFloat(amount))) {
+                console.log('Not a valid amount');
+                return;
+            }
+            transactions.push(new Transaction(t['$']['Date'], // The attribute of a SupportTransaction
+                                              t['Parties'][0]['From'][0],
+                                              t['Parties'][0]['To'][0],
+                                              t['Description'][0],
+                                              amount));
+        });
     });
+    
+    updateAccounts();
 }
 
+// Once all the transactions have been read into the transactions array
+// Update the accounts array with money transfers
 function updateAccounts() {
     transactions.forEach(function(element) {
         // For each transaction:
@@ -140,10 +162,12 @@ function updateAccounts() {
 
 
 
+// Command interpreter
 // Initialise an arrray of string commands to functions
 var commands_dictionary = {};
 
 function do_list(name) {
+    // Query all accounts or just one
     if (name === "All") {
         console.log("Print all account names and balances");
         for (var [key, value] of accounts) {
@@ -173,18 +197,21 @@ function do_list(name) {
 }
 
 function do_import(filename) {
+    // Call different file handlers depending on the extension
     const extension = filename.split('.').pop();
     if (extension === 'json') {
         import_json_data(filename);
     } else if (extension === 'csv') {
         import_csv_data(filename);
+    } else if (extension === 'xml') {
+        import_xml_data(filename);
     } else {
         console.log('Unrecognised file type');
     }
 }
 
 function do_help() {
-    console.log("Supported commands are List, Import [filename]");
+    console.log("Supported commands are List, Import [filename] for CSV, XML, JSON");
 }
 
 // Command loop
