@@ -1,5 +1,6 @@
 const fs = require('fs');
 const moment = require('moment');
+const xml2js = require('xml2js');
 //const logger = log4js.getLogger('<filename>');
 
 class Transaction {
@@ -19,7 +20,7 @@ class Account {
         this.transactionRefs = [];
     }
 
-    get balance() {
+    balance() {
         var running_total = 0;
         this.transactionRefs.forEach(function(t) {
             if (t.to === name) {

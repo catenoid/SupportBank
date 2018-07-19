@@ -16,20 +16,14 @@ function do_list(name, accounts) {
             // Not a single source of truth
             // Which do you trust?
             console.log("Every associate transaction with", name);
-            var running_total = 0;
             record.transactionRefs.forEach(function(t) {
                 // Some formatting for this transaction:
                 let connective = 'to ' + t.to;
                 if (t.to === name) {
                     connective = 'from ' + t.from;
-                    running_total += t.amount;
-                } else {
-                    running_total -= t.amount;
                 }
                 console.log(t.date.toString(), t.narrative, connective);
-                
             });
-            console.log("Running total", running_total); // Should equal balance
         } else {
             console.log("No account found with name", name);
         }
