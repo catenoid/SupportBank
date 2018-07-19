@@ -26,6 +26,7 @@ console.log("Press Ctrl-C to quit");
 const readlineSync = require('readline-sync');
 const fs = require('fs');
 const xml2js = require('xml2js');
+const moment = require('moment');
 
 // Store transactions and accounts as objects
 var transactions = [];
@@ -75,16 +76,15 @@ function import_csv_data(inputPath) {
             continue;
         }
         
-        // Valid date checking. Moment only allows dates in ISO format (year first)
-        // So write a regex matching \d\d\/\d\d\/\d\d\d\d
-        // Instead of !moment(date).isValid()
-        if (date.match(/\d\d\/\d\d\/\d\d\d\d/) == null) {
+        // Valid date checking
+        const date_moment = moment(date, 'DD/MM/YYYY');
+        if (!date_moment.isValid()) {
             console.log('Not a valid date:', date);
-            continue;
+            continue
         }
 
         // Create transaction objects
-        transactions.push(new Transaction(date, from, to, narrative, amount));
+        transactions.push(new Transaction(date_moment, from, to, narrative, amount));
     }
 
     // Use the transactions just loaded to update the accounts
@@ -99,7 +99,13 @@ function import_json_data(inputPath) {
     const json = JSON.parse(json_str_out);
 
     json.forEach(function (t) {
-        transactions.push(new Transaction(t["Date"],
+        const date_moment = moment(t['Date'], 'YYYY-MM-DD');
+        if (!date_moment.isValid()) {
+            console.log('Not a valid date', date_moment);
+            return;
+        }
+
+        transactions.push(new Transaction(date_moment,
                                           t["FromAccount"],
                                           t["ToAccount"],
                                           t["Narrative"],
@@ -127,7 +133,16 @@ function import_xml_data(inputPath) {
                 console.log('Not a valid amount');
                 return;
             }
-            transactions.push(new Transaction(t['$']['Date'], // The attribute of a SupportTransaction
+
+            const nDaysSince = parseInt(t['$']['Date']); // The attribute of a SupportTransaction;
+            const date_moment = moment('1900-01-01', 'YYYY-MM-DD').add('days', nDaysSince);
+            if (!date_moment.isValid()) {
+                console.log('Not a valid date', date_moment);
+                return;
+            }
+            console.log(date_moment);
+
+            transactions.push(new Transaction(date_moment,
                                               t['Parties'][0]['From'][0],
                                               t['Parties'][0]['To'][0],
                                               t['Description'][0],
@@ -182,14 +197,20 @@ function do_list(name) {
             console.log(name, "has balance", rounded_balance);
 
             console.log("Every associate transaction with", name);
+            var running_total = 0;
             record.transactionRefs.forEach(function(t) {
                 // Some formatting for this transaction:
                 let connective = 'to ' + t.to;
                 if (t.to === name) {
                     connective = 'from ' + t.from;
+                    running_total += t.amount;
+                } else {
+                    running_total -= t.amount;
                 }
-                console.log(t.date, t.narrative, connective);
+                console.log(t.date.toString(), t.narrative, connective);
+                
             });
+            console.log("Running total", running_total); // Should equal balance
         } else {
             console.log("No account found with name", name);
         }
