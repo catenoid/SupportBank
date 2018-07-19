@@ -42,26 +42,21 @@ while (true) {
 
     const cmd_str = command[0];
     const cmd_fn = commands_dictionary[cmd_str];
+    const cmd_remains = command.slice(1).join(' ');
 
     // Depending on whether the command is defined...
-    if (cmd_fn) {
-        const cmd_remains = command.slice(1).join(' ');
-
-        // Depending on whether the command returns data or needs data...
-        if (cmd_fn.requiresAccounts && cmd_fn.returnsTransactions) {
-            const new_transactions = cmd_fn(cmd_remains, accounts);
-            transactions.push(...new_transactions);
-        }
-        
-        else if (cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
-            cmd_fn(cmd_remains, accounts);
-        }
-
-        else if (!cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
-            cmd_fn(cmd_remains);
-        }
-
-    } else {
-        console.log("command "+ cmd_str +" not found");
+    if (!cmd_fn) {
+        console.log("Command "+ cmd_str +" not found");
+        continue;
+    }
+    
+    // Depending on whether the command returns data or needs data...
+    if (cmd_fn.requiresAccounts && cmd_fn.returnsTransactions) {
+        const new_transactions = cmd_fn(cmd_remains, accounts);
+        transactions.push(...new_transactions);
+    } else if (cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
+        cmd_fn(cmd_remains, accounts);
+    } else if (!cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
+        cmd_fn(cmd_remains);
     }
 }

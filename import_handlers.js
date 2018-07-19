@@ -1,6 +1,6 @@
 const fs = require('fs');
 const moment = require('moment');
-
+//const logger = log4js.getLogger('<filename>');
 
 class Transaction {
     constructor(date, from, to, narrative, amount) {

@@ -13,6 +13,8 @@ function do_list(name, accounts) {
             const rounded_balance = Math.round(record.balance * 100) / 100;
             console.log(name, "has balance", rounded_balance);
 
+            // Not a single source of truth
+            // Which do you trust?
             console.log("Every associate transaction with", name);
             var running_total = 0;
             record.transactionRefs.forEach(function(t) {
