@@ -65,6 +65,20 @@ function import_csv_data(inputPath) {
         const narrative = transaction[3];
         const amount = transaction[4];
         
+        // Check valid amounts (with isNaN) and dates with moment
+        if (isNaN(parseFloat(amount))) {
+            console.log('Not a valid amount');
+            continue;
+        }
+        
+        // Valid date checking. Moment only allows dates in ISO format (year first)
+        // So write a regex matching \d\d\/\d\d\/\d\d\d\d
+        // Instead of !moment(date).isValid()
+        if (date.match(/\d\d\/\d\d\/\d\d\d\d/) == null) {
+            console.log('Not a valid date:', date);
+            continue;
+        }
+
         // Create transaction objects
         transactions.push(new Transaction(date, from, to, narrative, amount));
     }
@@ -156,9 +170,14 @@ function do_import(filename) {
     }
 }
 
+function do_help() {
+    console.log("Supported commands are List, Import [filename]");
+}
+
 // Command loop
 commands_dictionary["List"] = do_list;
 commands_dictionary["Import"] = do_import;
+commands_dictionary["Help"] = do_help;
 
 while (true) {
     var command = readlineSync.question('Enter a command: ');
