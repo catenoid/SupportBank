@@ -51,12 +51,14 @@ while (true) {
     }
     
     // Depending on whether the command returns data or needs data...
-    if (cmd_fn.requiresAccounts && cmd_fn.returnsTransactions) {
-        const new_transactions = cmd_fn(cmd_remains, accounts);
+    let new_transactions;
+    if (cmd_fn.requiresAccounts) {
+        new_transactions = cmd_fn(cmd_remains, accounts);
+    } else {
+        new_transactions = cmd_fn(cmd_remains);
+    }
+
+    if (new_transactions) {
         transactions.push(...new_transactions);
-    } else if (cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
-        cmd_fn(cmd_remains, accounts);
-    } else if (!cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
-        cmd_fn(cmd_remains);
     }
 }

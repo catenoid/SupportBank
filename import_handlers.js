@@ -18,6 +18,18 @@ class Account {
         this.balance = 0;
         this.transactionRefs = [];
     }
+
+    get balance() {
+        var running_total = 0;
+        this.transactionRefs.forEach(function(t) {
+            if (t.to === name) {
+                running_total += t.amount;
+            } else {
+                running_total -= t.amount;
+            }
+        });
+        return running_total; // Should equal balance
+    }
 }
 
 function import_csv_data(inputPath, accounts) {

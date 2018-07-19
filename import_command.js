@@ -1,14 +1,15 @@
 const import_transactions = require('./import_handlers');
 
+const extract_data = {'json': import_transactions.import_json_data,
+                      'csv': import_transactions.import_csv_data,
+                      'xml': import_transactions.import_xml_data}
+
 function do_import(filename, accounts) {
     // Call different file handlers depending on the extension
     const extension = filename.split('.').pop();
-    if (extension === 'json') {
-        return import_transactions.import_json_data(filename, accounts);
-    } else if (extension === 'csv') {
-        return import_transactions.import_csv_data(filename, accounts);
-    } else if (extension === 'xml') {
-        return import_transactions.import_xml_data(filename, accounts);
+    const fn = extract_data[extension]
+    if (fn) {
+        return fn(filename, accounts);
     } else {
         console.log('Unrecognised file type');
         return [];
