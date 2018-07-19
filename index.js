@@ -20,6 +20,8 @@ console.log("Press Ctrl-C to quit");
 //List [Account] should also print a list of every transaction, with the date and narrative, for that account with that name.
 
 
+
+
 // Extract Data
 const readlineSync = require('readline-sync');
 const fs = require('fs');
@@ -45,8 +47,6 @@ class Account {
 }
 var accounts = new Map();
 
-const inputPath = '.\\Transactions2014.csv';
-
 function import_csv_data(inputPath) {
     // Clear any pre-existing transactions
     transactions = [];
@@ -54,7 +54,7 @@ function import_csv_data(inputPath) {
     const csv_out = fs.readFileSync(inputPath, 'utf8');
     const lineSplit = csv_out.split('\n');
 
-    for (var i=1; i<lineSplit.length; i++) {
+    for (var i=1; i<lineSplit.length-1; i++) {
         // Start at row 1, as row 0 contains the column headings
         const transaction = lineSplit[i].split(',');
 
@@ -103,6 +103,19 @@ function import_json_data(inputPath) {
     });
 
     updateAccounts();
+}
+
+const xml2js = require('xml2js');
+
+function import_xml_data(inputPath) {
+    // Clear any pre-existing transactions
+    transactions = [];
+
+    const xml_str_out = fs.readFileSync(inputPath, 'utf8');
+    var parseString = xml2js.parseString;
+    parseString(xml_str_out, function (err, result) {
+        console.log(result);
+    });
 }
 
 function updateAccounts() {
