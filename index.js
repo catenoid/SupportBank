@@ -51,9 +51,8 @@ var accounts = new Map();
 
 // There is a different function handler for each data format
 
-function import_csv_data(inputPath) {
-    // Clear any pre-existing transactions
-    transactions = [];
+function import_csv_data(inputPath, accounts) {
+    let transactions = [];
 
     const csv_out = fs.readFileSync(inputPath, 'utf8');
     const lineSplit = csv_out.split('\n');
@@ -88,12 +87,12 @@ function import_csv_data(inputPath) {
     }
 
     // Use the transactions just loaded to update the accounts
-    updateAccounts();
+    updateAccounts(accounts, transactions);
+    return transactions;
 }
 
-function import_json_data(inputPath) {
-    // Clear any pre-existing transactions
-    transactions = [];
+function import_json_data(inputPath, accounts) {
+    let transactions = [];
 
     const json_str_out = fs.readFileSync(inputPath, 'utf8');
     const json = JSON.parse(json_str_out);
@@ -112,12 +111,12 @@ function import_json_data(inputPath) {
                                           t["Amount"]));
     });
 
-    updateAccounts();
+    updateAccounts(accounts, transactions);
+    return transactions;
 }
 
-function import_xml_data(inputPath) {
-    // Clear any pre-existing transactions
-    transactions = [];
+function import_xml_data(inputPath, accounts) {
+    let transactions = [];
 
     const xml_str_out = fs.readFileSync(inputPath, 'utf8');
     var parseString = xml2js.parseString;
@@ -150,12 +149,13 @@ function import_xml_data(inputPath) {
         });
     });
     
-    updateAccounts();
+    updateAccounts(accounts, transactions);
+    return transactions;
 }
 
 // Once all the transactions have been read into the transactions array
 // Update the accounts array with money transfers
-function updateAccounts() {
+function updateAccounts(accounts, transactions) {
     transactions.forEach(function(element) {
         // For each transaction:
     
@@ -181,7 +181,7 @@ function updateAccounts() {
 // Initialise an arrray of string commands to functions
 var commands_dictionary = {};
 
-function do_list(name) {
+function do_list(name, accounts) {
     // Query all accounts or just one
     if (name === "All") {
         console.log("Print all account names and balances");
@@ -216,24 +216,32 @@ function do_list(name) {
         }
     }
 }
+do_list.requiresAccounts = true; // takes the accounts global array
+do_list.returnsTransactions = false; // it only does logging
 
-function do_import(filename) {
+function do_import(filename, accounts) {
     // Call different file handlers depending on the extension
     const extension = filename.split('.').pop();
     if (extension === 'json') {
-        import_json_data(filename);
+        return import_json_data(filename, accounts);
     } else if (extension === 'csv') {
-        import_csv_data(filename);
+        return import_csv_data(filename, accounts);
     } else if (extension === 'xml') {
-        import_xml_data(filename);
+        return import_xml_data(filename, accounts);
     } else {
         console.log('Unrecognised file type');
+        return [];
     }
 }
+do_import.requiresAccounts = true; // accounts array to update balances and add transaction refs
+do_import.returnsTransactions = true; // new transactions objects to append
+//You have to keep all the transactions, because otherwise where do the refs point?
 
 function do_help() {
     console.log("Supported commands are List, Import [filename] for CSV, XML, JSON");
 }
+do_help.requiresAccounts = false;
+do_help.returnsTransactions = false;
 
 // Command loop
 commands_dictionary["List"] = do_list;
@@ -246,10 +254,15 @@ while (true) {
 
     const cmd_str = command[0];
     const cmd_fn = commands_dictionary[cmd_str];
-    if (cmd_fn) {
+
+    if (cmd_fn.requiresAccounts && cmd_fn.returnsTransactions) {
         // Give the list command the remainder of the command string
-        cmd_fn(command.slice(1).join(' '));
+        const new_transactions = cmd_fn(command.slice(1).join(' '), accounts);
+        transactions.push(...new_transactions);
+    } else if (cmd_fn.requiresAccounts && !cmd_fn.returnsTransactions) {
+        cmd_fn(command.slice(1).join(' '), accounts);
     } else {
         console.log("command "+ cmd_str +" not found");
     }
+
 }
