@@ -121,8 +121,6 @@ function import_xml_data(inputPath, accounts) {
                 console.log('Not a valid date', date_moment);
                 return;
             }
-            console.log(date_moment);
-
             transactions.push(new Transaction(date_moment,
                                               t['Parties'][0]['From'][0],
                                               t['Parties'][0]['To'][0],
