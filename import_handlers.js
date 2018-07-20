@@ -16,20 +16,20 @@ class Transaction {
 class Account {
     constructor(name) {
         this.name = name;
-        this.balance = 0;
         this.transactionRefs = [];
     }
 
-    balance() {
+    calcBalance() {
         var running_total = 0;
+        let account_name = this.name;
         this.transactionRefs.forEach(function(t) {
-            if (t.to === name) {
+            if (t.to === account_name) {
                 running_total += t.amount;
             } else {
                 running_total -= t.amount;
             }
         });
-        return running_total; // Should equal balance
+        return running_total;
     }
 }
 
@@ -148,10 +148,6 @@ function updateAccounts(accounts, transactions) {
             // add references to those transactions
             accounts.get(name).transactionRefs.push(element);
         });
-    
-        // credit or debit those balances
-        accounts.get(element.from).balance -= element.amount;
-        accounts.get(element.to).balance += element.amount;
     });
 }
 

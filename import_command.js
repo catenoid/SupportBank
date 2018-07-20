@@ -16,7 +16,5 @@ function do_import(filename, accounts) {
     }
 }
 do_import.requiresAccounts = true; // accounts array to update balances and add transaction refs
-do_import.returnsTransactions = true; // new transactions objects to append
-//You have to keep all the transactions, because otherwise where do the refs point?
 
 module.exports = {do_import}
