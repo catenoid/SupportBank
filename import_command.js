@@ -11,10 +11,10 @@ function do_import(filename, accounts) {
     if (fn) {
         return fn(filename, accounts);
     } else {
-        console.log('Unrecognised file type');
+        console.warn('Unrecognised file type');
         return [];
     }
 }
 do_import.requiresAccounts = true; // accounts array to update balances and add transaction refs
 
-module.exports = {do_import}
+module.exports = do_import;

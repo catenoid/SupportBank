@@ -16,10 +16,8 @@ function do_list(name, accounts) {
             console.log("Every associate transaction with", name);
             record.transactionRefs.forEach(function(t) {
                 // Some formatting for this transaction:
-                let connective = 'to ' + t.to;
-                if (t.to === name) {
-                    connective = 'from ' + t.from;
-                }
+                const toThisAccount = t.to === name;
+                const connective = (toThisAccount ? 'from' : 'to');
                 console.log(t.date.toString(), t.narrative, connective);
             });
         } else {
@@ -27,6 +25,6 @@ function do_list(name, accounts) {
         }
     }
 }
-do_list.requiresAccounts = true; // takes the accounts global array
+do_list.requiresAccounts = true;
 
-module.exports = {do_list}
+module.exports = do_list

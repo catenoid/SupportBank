@@ -23,11 +23,8 @@ class Account {
         var running_total = 0;
         let account_name = this.name;
         this.transactionRefs.forEach(function(t) {
-            if (t.to === account_name) {
-                running_total += t.amount;
-            } else {
-                running_total -= t.amount;
-            }
+            const toThisAccount = t.to === account_name;
+            running_total += (toThisAccount ? 1 : -1) * t.amount;
         });
         return running_total;
     }
@@ -36,20 +33,15 @@ class Account {
 function import_csv_data(inputPath, accounts) {
     let transactions = [];
 
-    const csv_out = fs.readFileSync(inputPath, 'utf8');
-    const lineSplit = csv_out.split('\n');
+    const lineSplit = fs.readFileSync(inputPath, 'utf8').trim().split('\n')
 
-    for (var i=1; i<lineSplit.length-1; i++) {
+    for (var i=1; i<lineSplit.length; i++) {
         // Start at row 1, as row 0 contains the column headings
         // End one before the final element, since the last array item is a blank line
         const transaction = lineSplit[i].split(',');
 
         // Extract the fields
-        const date = transaction[0];
-        const from = transaction[1];
-        const to = transaction[2];
-        const narrative = transaction[3];
-        const amount = transaction[4];
+        const [date, from, to, narrative, amount] = transaction;
         
         // Check valid amounts (with isNaN)
         if (isNaN(parseFloat(amount))) {
@@ -79,18 +71,18 @@ function import_json_data(inputPath, accounts) {
     const json_str_out = fs.readFileSync(inputPath, 'utf8');
     const json = JSON.parse(json_str_out);
 
-    json.forEach(function (t) {
-        const date_moment = moment(t['Date'], 'YYYY-MM-DD');
+    json.forEach(function (transaction) {
+        const date_moment = moment(transaction['Date'], 'YYYY-MM-DD');
         if (!date_moment.isValid()) {
             console.log('Not a valid date', date_moment);
             return;
         }
 
         transactions.push(new Transaction(date_moment,
-                                          t["FromAccount"],
-                                          t["ToAccount"],
-                                          t["Narrative"],
-                                          t["Amount"]));
+                                          transaction["FromAccount"],
+                                          transaction["ToAccount"],
+                                          transaction["Narrative"],
+                                          transaction["Amount"]));
     });
 
     updateAccounts(accounts, transactions);

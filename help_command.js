@@ -3,4 +3,4 @@ function do_help() {
 }
 do_help.requiresAccounts = false;
 
-module.exports = {do_help}
+module.exports = do_help

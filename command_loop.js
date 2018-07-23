@@ -6,40 +6,40 @@ const help_command = require('./help_command');
 function begin() {
     // Store transactions and accounts as objects
     var transactions = [];
-    var accounts = new Map(); // Map string IDs to accound objects
+    var accounts = new Map(); // Map string IDs to account objects
 
     // Command interpreter
     // Initialise an arrray of string commands to functions
-    var commands_dictionary = {};
-    commands_dictionary["List"] = list_command.do_list;
-    commands_dictionary["Import"] = import_command.do_import;
-    commands_dictionary["Help"] = help_command.do_help;
+    const commandsDictionary = {
+        List: list_command,
+        Import: import_command,
+        Help: help_command,
+    };
 
     // Command loop
     while (true) {
-        var command = readlineSync.question('Enter a command: ');
-        command = command.split(" ");
+        const command = readlineSync.question('Enter a command: ').split(' ');
 
-        const cmd_str = command[0];
-        const cmd_fn = commands_dictionary[cmd_str];
-        const cmd_remains = command.slice(1).join(' ');
+        const commandType = command[0];
+        const commandFunction = commandsDictionary[commandType];
+        const commandParams = command.slice(1).join(' ');
 
         // Depending on whether the command is defined...
-        if (!cmd_fn) {
-            console.log("Command "+ cmd_str +" not found");
+        if (!commandFunction) {
+            console.log(`Command ${commandType} not found`);
             continue;
         }
         
         // Depending on whether the command returns data or needs data...
-        let new_transactions;
-        if (cmd_fn.requiresAccounts) {
-            new_transactions = cmd_fn(cmd_remains, accounts);
+        let newTransactions;
+        if (commandFunction.requiresAccounts) {
+            newTransactions = commandFunction(commandParams, accounts);
         } else {
-            new_transactions = cmd_fn(cmd_remains);
+            newTransactions = commandFunction(commandParams);
         }
 
-        if (new_transactions) {
-            transactions.push(...new_transactions);
+        if (newTransactions) {
+            transactions.push(...newTransactions);
         }
     }
 }
