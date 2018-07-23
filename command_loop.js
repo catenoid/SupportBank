@@ -1,19 +1,19 @@
 const readlineSync = require('readline-sync');
-const list_command = require('./list_command');
-const import_command = require('./import_command');
-const help_command = require('./help_command');
+const listCommand = require('./list_command');
+const importCommand = require('./import_command');
+const helpCommand = require('./help_command');
 
 function begin() {
     // Store transactions and accounts as objects
-    var transactions = [];
-    var accounts = new Map(); // Map string IDs to account objects
+    let transactions = [];
+    let accounts = new Map(); // Map string IDs to account objects
 
     // Command interpreter
     // Initialise an arrray of string commands to functions
     const commandsDictionary = {
-        List: list_command,
-        Import: import_command,
-        Help: help_command,
+        List: listCommand,
+        Import: importCommand,
+        Help: helpCommand,
     };
 
     // Command loop

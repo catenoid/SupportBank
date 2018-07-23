@@ -20,22 +20,22 @@ class Account {
     }
 
     calcBalance() {
-        var running_total = 0;
-        let account_name = this.name;
-        this.transactionRefs.forEach(function(t) {
-            const toThisAccount = t.to === account_name;
-            running_total += (toThisAccount ? 1 : -1) * t.amount;
+        let runningTotal = 0;
+        let accountName = this.name;
+        this.transactionRefs.forEach(function(transaction) {
+            const toThisAccount = transaction.to === accountName;
+            runningTotal += (toThisAccount ? 1 : -1) * transaction.amount;
         });
-        return running_total;
+        return runningTotal;
     }
 }
 
-function import_csv_data(inputPath, accounts) {
+function importCSVdata(inputPath, accounts) {
     let transactions = [];
 
     const lineSplit = fs.readFileSync(inputPath, 'utf8').trim().split('\n')
 
-    for (var i=1; i<lineSplit.length; i++) {
+    for (let i=1; i<lineSplit.length; i++) {
         // Start at row 1, as row 0 contains the column headings
         // End one before the final element, since the last array item is a blank line
         const transaction = lineSplit[i].split(',');
@@ -50,14 +50,14 @@ function import_csv_data(inputPath, accounts) {
         }
         
         // Valid date checking
-        const date_moment = moment(date, 'DD/MM/YYYY');
-        if (!date_moment.isValid()) {
+        const dateMoment = moment(date, 'DD/MM/YYYY');
+        if (!dateMoment.isValid()) {
             console.log('Not a valid date:', date);
             continue
         }
 
         // Create transaction objects
-        transactions.push(new Transaction(date_moment, from, to, narrative, amount));
+        transactions.push(new Transaction(dateMoment, from, to, narrative, amount));
     }
 
     // Use the transactions just loaded to update the accounts
@@ -65,7 +65,7 @@ function import_csv_data(inputPath, accounts) {
     return transactions;
 }
 
-function import_json_data(inputPath, accounts) {
+function importJSONdata(inputPath, accounts) {
     let transactions = [];
 
     const json_str_out = fs.readFileSync(inputPath, 'utf8');
@@ -89,16 +89,16 @@ function import_json_data(inputPath, accounts) {
     return transactions;
 }
 
-function import_xml_data(inputPath, accounts) {
+function importXMLdata(inputPath, accounts) {
     let transactions = [];
 
-    const xml_str_out = fs.readFileSync(inputPath, 'utf8');
-    var parseString = xml2js.parseString;
-    parseString(xml_str_out, function (err, result) {
+    const xmlAsString = fs.readFileSync(inputPath, 'utf8');
+    const parseString = xml2js.parseString;
+    parseString(xmlAsString, function (err, result) {
         // Convert XML to JSON
-        const as_json = JSON.parse(JSON.stringify(result));
-        const ts = as_json["TransactionList"]["SupportTransaction"];
-        ts.forEach(function(t) {
+        const asJSON = JSON.parse(JSON.stringify(result));
+        const transactions = asJSON["TransactionList"]["SupportTransaction"];
+        transactions.forEach(function(t) {
             const amount = t['Value'][0];
             
             // Check valid amounts (with isNaN)
@@ -108,12 +108,12 @@ function import_xml_data(inputPath, accounts) {
             }
 
             const nDaysSince = parseInt(t['$']['Date']); // The attribute of a SupportTransaction;
-            const date_moment = moment('1900-01-01', 'YYYY-MM-DD').add('days', nDaysSince);
-            if (!date_moment.isValid()) {
-                console.log('Not a valid date', date_moment);
+            const dateMoment = moment('1900-01-01', 'YYYY-MM-DD').add('days', nDaysSince);
+            if (!dateMoment.isValid()) {
+                console.log('Not a valid date', dateMoment);
                 return;
             }
-            transactions.push(new Transaction(date_moment,
+            transactions.push(new Transaction(dateMoment,
                                               t['Parties'][0]['From'][0],
                                               t['Parties'][0]['To'][0],
                                               t['Description'][0],
@@ -128,19 +128,19 @@ function import_xml_data(inputPath, accounts) {
 // Once all the transactions have been read into the transactions array
 // Update the accounts array with money transfers
 function updateAccounts(accounts, transactions) {
-    transactions.forEach(function(element) {
+    transactions.forEach(function(transaction) {
         // For each transaction:
     
-        [element.from, element.to].forEach(function(name) {
+        [transaction.from, transaction.to].forEach(function(name) {
             // Create accounts if they don't exist already
             if (!accounts.get(name)) {
                 accounts.set(name, new Account(name));
             }
     
             // add references to those transactions
-            accounts.get(name).transactionRefs.push(element);
+            accounts.get(name).transactionRefs.push(transaction);
         });
     });
 }
 
-module.exports = {import_csv_data, import_json_data, import_xml_data}
+module.exports = {importCSVdata, importJSONdata, importXMLdata}

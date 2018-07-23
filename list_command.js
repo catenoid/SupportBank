@@ -1,17 +1,17 @@
-function do_list(name, accounts) {
+function doList(name, accounts) {
     // Query all accounts or just one
     if (name === "All") {
         console.log("Print all account names and balances");
-        for (var [key, value] of accounts) {
-            const rounded_balance = Math.round(value.calcBalance() * 100) / 100;
-            console.log(value.name, rounded_balance);
+        for (let [key, value] of accounts) {
+            const roundedBalance = Math.round(value.calcBalance() * 100) / 100;
+            console.log(value.name, roundedBalance);
         }
 
     } else {
         const record = accounts.get(name);
         if (record) {
-            const rounded_balance = Math.round(record.calcBalance() * 100) / 100;
-            console.log(name, "has balance", rounded_balance);
+            const roundedBalance = Math.round(record.calcBalance() * 100) / 100;
+            console.log(name, "has balance", roundedBalance);
             
             console.log("Every associate transaction with", name);
             record.transactionRefs.forEach(function(t) {
@@ -25,6 +25,6 @@ function do_list(name, accounts) {
         }
     }
 }
-do_list.requiresAccounts = true;
+doList.requiresAccounts = true;
 
-module.exports = do_list
+module.exports = doList

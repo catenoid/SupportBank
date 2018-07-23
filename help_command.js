@@ -1,6 +1,6 @@
-function do_help() {
+function doHelp() {
     console.log("Supported commands are List, Import [filename] for CSV, XML, JSON");
 }
-do_help.requiresAccounts = false;
+doHelp.requiresAccounts = false;
 
-module.exports = do_help
+module.exports = doHelp
