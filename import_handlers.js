@@ -68,21 +68,19 @@ function importCSVdata(inputPath, accounts) {
 function importJSONdata(inputPath, accounts) {
     let transactions = [];
 
-    const json_str_out = fs.readFileSync(inputPath, 'utf8');
-    const json = JSON.parse(json_str_out);
-
+    const json = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
     json.forEach(function (transaction) {
-        const date_moment = moment(transaction['Date'], 'YYYY-MM-DD');
-        if (!date_moment.isValid()) {
-            console.log('Not a valid date', date_moment);
+        const dateMoment = moment(transaction['Date'], 'YYYY-MM-DD');
+        if (!dateMoment.isValid()) {
+            console.log('Not a valid date', dateMoment);
             return;
         }
 
-        transactions.push(new Transaction(date_moment,
-                                          transaction["FromAccount"],
-                                          transaction["ToAccount"],
-                                          transaction["Narrative"],
-                                          transaction["Amount"]));
+        transactions.push(new Transaction(dateMoment,
+                                          transaction['FromAccount'],
+                                          transaction['ToAccount'],
+                                          transaction['Narrative'],
+                                          transaction['Amount']));
     });
 
     updateAccounts(accounts, transactions);
@@ -97,7 +95,7 @@ function importXMLdata(inputPath, accounts) {
     parseString(xmlAsString, function (err, result) {
         // Convert XML to JSON
         const asJSON = JSON.parse(JSON.stringify(result));
-        const transactions = asJSON["TransactionList"]["SupportTransaction"];
+        const transactions = asJSON['TransactionList']['SupportTransaction'];
         transactions.forEach(function(t) {
             const amount = t['Value'][0];
             
